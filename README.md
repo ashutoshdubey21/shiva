@@ -49,7 +49,7 @@
 * The IP address of gitlab-runner.aws.mtxgp.net is added as allowed SSH incoming on the 'web server rules' security group. This allows the gitlab-runner to connect and do CI/CD tasks.
 * The copyandreload.sh script is located in the home directory of the gitlab-runner user on gitlab-runner.aws.mtxgp.net server
 
-## Jira
+## JIRA
 [JIRA page](https://matrix-group.atlassian.net/browse/ITGEN-80)
 
 ## WIKI

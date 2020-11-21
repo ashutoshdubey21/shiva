@@ -1,0 +1,176 @@
+before_script:
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+
+cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+        - .npm/
+
+stages:
+    - build_dev
+    - deploy_dev
+    - build
+    - deploy
+
+build_dev:
+    stage: build_dev
+    artifacts:
+        paths:
+            - dist/
+    script:
+        - npm ci --cache .npm --prefer-offline
+        - npx vue-cli-service build --mode development
+    only:
+        - dev
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+build:
+    stage: build
+    artifacts:
+        paths:
+            - dist/
+    script:
+        - npm ci --cache .npm --prefer-offline
+        - npx vue-cli-service build
+    only:
+        - fmi_midsummer_2020
+        - ndap2-prod
+        - naes2020-prod
+        - eaie2020-prod
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-dev-eaie:
+    stage: deploy_dev
+    environment:
+        name: eaie-dev
+        url: https://eaie.bespeake.io
+    dependencies:
+        - build_dev
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - aws s3 cp dist/ s3://eaie.bespeake.io --recursive --profile MatrixSpecialProj
+        - aws s3 cp dist/index.html s3://eaie.bespeake.io/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --profile MatrixSpecialProj
+        - aws s3 cp src/sites/eaie/config.json s3://eaie.bespeake.io/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --profile MatrixSpecialProj
+    only:
+        - dev
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-dev-ndap:
+    stage: deploy_dev
+    environment:
+        name: ndap-dev
+        url: https://ndap.bespeake.io
+    dependencies:
+        - build_dev
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - rsync -avz dist/* deployer@vmptemp.aws.mtxgp.net:/var/www/html/ndap
+        - rsync -avz src/sites/ndap/config.json deployer@vmptemp.aws.mtxgp.net:/var/www/html/ndap/
+    only:
+        - dev
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-prod-abc:
+    stage: deploy
+    environment:
+        name: abc-prod
+        url: https://abc.fmi.org
+    dependencies:
+        - build
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - aws s3 cp dist/ s3://abc.fmi.org --recursive
+        - aws s3 cp dist/index.html s3://abc.fmi.org/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --acl public-read
+        - aws s3 cp src/sites/abc/config.json s3://abc.fmi.org/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --acl public-read
+    only:
+        - abc-prod
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-prod-eaie:
+    stage: deploy
+    environment:
+        name: eaie-prod
+        url: https://exchange.eaie.org
+    dependencies:
+        - build
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - aws s3 cp dist/ s3://eaie2020.bespeake.live --recursive
+        - aws s3 cp dist/index.html s3://eaie2020.bespeake.live/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --acl public-read
+        - aws s3 cp src/sites/eaie/config.json s3://eaie2020.bespeake.live/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --acl public-read
+    only:
+        - eaie2020-prod
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-dev-nafc:
+    stage: deploy_dev
+    environment:
+        name: nafc-dev
+        url: https://nafc.bespeake.io
+    dependencies:
+        - build_dev
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - rsync -avz dist/* deployer@vmptemp.aws.mtxgp.net:/var/www/html/nafc
+        - rsync -avz src/sites/nafc/config.json deployer@vmptemp.aws.mtxgp.net:/var/www/html/nafc/
+    only:
+        - dev
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-dev-naes:
+    stage: deploy_dev
+    environment:
+        name: naes-dev
+        url: https://naes.bespeake.io
+    dependencies:
+        - build_dev
+    script:
+        - aws s3 cp dist/ s3://naes.bespeake.io --recursive --profile MatrixSpecialProj
+        - aws s3 cp dist/index.html s3://naes.bespeake.io/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --profile MatrixSpecialProj
+        - aws s3 cp src/sites/naes/config.json s3://naes.bespeake.io/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --profile MatrixSpecialProj
+    only:
+        - dev
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-prod-ndap:
+    stage: deploy
+    environment:
+        name: ndap-prod
+        url: http://bazaar.nonduesapalooza.com
+    dependencies:
+        - build
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - aws s3 cp dist/ s3://nonduesapalooza --recursive
+        - aws s3 cp dist/index.html s3://nonduesapalooza/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --acl public-read
+        - aws s3 cp src/sites/ndap/config.json s3://nonduesapalooza/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --acl public-read
+    only:
+        - ndap-prod
+    tags:
+        - gitlab-runner.aws.mtxgp.net
+
+deploy-midsummer:
+    stage: deploy
+    environment:
+        name: naes2020-prod
+        url: https://biennial2020.episcopalschools.org
+    dependencies:
+        - build
+    script:
+        - ssh-add <(echo "$SSH_GITRUNNER_PRIVATE_KEY")
+        - aws s3 cp dist/ s3://naes2020.bespeake.live --recursive
+        - aws s3 cp dist/index.html s3://naes2020.bespeake.live/  --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --acl public-read
+        - aws s3 cp src/sites/naes/config.json s3://naes2020.bespeake.live/ --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/json --acl public-read
+    only:
+        - naes2020-prod
+    tags:
+        - gitlab-runner.aws.mtxgp.net
