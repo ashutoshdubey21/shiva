@@ -1,10 +1,10 @@
-# What does it do?
+## What does it do?
 
 * This workflow is to allow developers and managers with access to change and deploy the mapping.json file of a production searchblox server.
 
  * Everything else can be managed by the admin GUI web interface except the mapping.json file.
 
-# Must have components for the Searchblox CI/CD Pipeline
+## Must have components for the Searchblox CI/CD Pipeline
 
 **NOTE: Each component must be configured and the whole must be integrated in order to have a successful CI/CD deployment of the mapping.json file**
 
@@ -15,7 +15,7 @@
 * The copyandreload.sh file
 * The mapping.json file
 
-# Setup the local dev
+## Setup the local dev
 
 ### 1. Set up the new searchblox server. In addition to the standard Linux server setup, also do these steps:
 
@@ -41,7 +41,7 @@
     * Commit and push both files to the master branch of the new searchblox project repository
     * The project CI/CD pipeline will instantly launch after the .gitlab-ci.yml is pushed to the master branch; monitor the progress of the build at CI/CD --> Jobs
 
-# Configurations info
+## Configurations info
 
 * Gitlab Runner: Instance: i-0a4a2a89d35d2ea1f gitlab-runner.aws.mtxgp.net
 * SSH keys: There additional key for prodjenkins. This key does NOT have a passphrase because the gitlab.com CI/DC system does not work with keys that have passphrase.
@@ -49,10 +49,10 @@
 * The IP address of gitlab-runner.aws.mtxgp.net is added as allowed SSH incoming on the 'web server rules' security group. This allows the gitlab-runner to connect and do CI/CD tasks.
 * The copyandreload.sh script is located in the home directory of the gitlab-runner user on gitlab-runner.aws.mtxgp.net server
 
-# Jira
+## Jira
 [JIRA page](https://matrix-group.atlassian.net/browse/ITGEN-80)
 
-# WIKI
+## WIKI
 [WIKI page](https://wiki.matrixgroup.net/index.php/Searchblox_CI/CD_in_gitlab.com)
 
 is there anything unusual about it?
