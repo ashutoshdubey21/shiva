@@ -1,0 +1,677 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+        xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+        version="3.0">
+<!-- timeout in milliseconds -->
+    <context-param>
+        <param-name>connection_timeout</param-name>
+        <param-value>5000</param-value>
+    </context-param>
+    <context-param>
+        <param-name>data_timeout</param-name>
+        <param-value>10000</param-value>
+    </context-param>
+
+    <!-- delay in minutes -->
+    <context-param>
+        <param-name>scheduler_delay</param-name>
+        <param-value>5</param-value>
+    </context-param>
+    <context-param>
+        <param-name>LIVE_LOGGER_MAX_CLIENTS</param-name>
+        <param-value>10</param-value>
+    </context-param>
+    <context-param>
+        <param-name>org.eclipse.jetty.servlet.Default.dirAllowed</param-name>
+        <param-value>false</param-value>
+    </context-param>
+    <filter>
+        <filter-name>XFrame Filter</filter-name>
+        <filter-class>com.searchblox.search.XFrameOptionsFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>XSS Filter</filter-name>
+        <filter-class>com.searchblox.web.XSSFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>XFrame Filter</filter-name>
+        <url-pattern>/servlet/SearchServlet</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>XSS Filter</filter-name>
+        <url-pattern>/servlet/UserServlet</url-pattern>
+        <url-pattern>/servlet/LoginServlet</url-pattern>
+        <url-pattern>/servlet/CollectionServlet</url-pattern>
+        <url-pattern>/servlet/AdServlet</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>Invocation context filter</filter-name>
+        <filter-class>com.searchblox.ads.adapter.InvocationContextFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Invocation context filter</filter-name>
+        <url-pattern>/servlet/AdServlet</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>Security Filter</filter-name>
+        <filter-class>com.searchblox.search.SanitizeFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Security Filter</filter-name>
+        <url-pattern>/servlet/SearchServlet</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>CSRFFilter</filter-name>
+        <filter-class>com.github.adriancitu.csrf.GenericCSRFStatelessFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>CSRFFilter</filter-name>
+        <url-pattern>/servlet/UserServlet</url-pattern>
+        <url-pattern>/servlet/LoginServlet</url-pattern>
+        <url-pattern>/servlet/CollectionServlet</url-pattern>
+        <url-pattern>/servlet/AdServlet</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>OneSource Filter</filter-name>
+        <filter-class>com.searchblox.search.OneFilter</filter-class>
+        <init-param>
+            <param-name>onesource/people</param-name>
+            <param-value></param-value>
+        </init-param>
+
+    </filter>
+
+    <filter-mapping>
+        <filter-name>OneSource Filter</filter-name>
+        <url-pattern>/onesource/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>UserPrivilegeFilter</filter-name>
+        <filter-class>com.searchblox.web.UserPrivilegeFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>UserPrivilegeFilter</filter-name>
+        <url-pattern>/admin/main.jsp</url-pattern>
+        <url-pattern>/servlet/UserServlet</url-pattern>
+    </filter-mapping>
+
+    <!-- PAC4j SAML Implementation begins -->
+    <filter>
+        <filter-name>SBSamlResponseFilter</filter-name>
+        <filter-class>com.searchblox.saml.SBSAMLResponseFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>SBSamlResponseFilter</filter-name>
+        <url-pattern>/saml/callback</url-pattern>
+    </filter-mapping>
+    <filter>
+        <filter-name>callbackFilter</filter-name>
+        <filter-class>org.pac4j.j2e.filter.CallbackFilter</filter-class>
+        <init-param>
+            <param-name>defaultUrl</param-name>
+            <param-value>/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>renewSession</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>multiProfile</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>callbackFilter</filter-name>
+        <url-pattern>/saml/callback</url-pattern>
+        <!--<url-pattern>/callback</url-pattern>-->
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>SamlAuthDecisionFilter</filter-name>
+        <filter-class>com.searchblox.saml.SAMLAuthDecisionFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>SamlAuthDecisionFilter</filter-name>
+        <url-pattern>/admin/main.jsp</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>Saml2Filter</filter-name>
+        <filter-class>org.pac4j.j2e.filter.SecurityFilter</filter-class>
+        <init-param>
+            <param-name>configFactory</param-name>
+            <param-value>com.searchblox.saml.SAMLConfigFactory</param-value>
+        </init-param>
+        <init-param>
+            <param-name>clients</param-name>
+            <param-value>SAML2Client</param-value>
+        </init-param>
+        <init-param>
+            <param-name>authorizers</param-name>
+            <param-value>securityHeaders</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>Saml2Filter</filter-name>
+        <url-pattern>/admin/main.jsp</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+    <filter>
+        <filter-name>Saml2MetadataFilter</filter-name>
+        <filter-class>com.searchblox.saml.SAMLMetadataFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>Saml2MetadataFilter</filter-name>
+        <url-pattern>/saml2-metadata</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+<!--
+    <filter>
+        <filter-name>mustBeAuthFilter</filter-name>
+        <filter-class>org.pac4j.j2e.filter.SecurityFilter</filter-class>
+        <init-param>
+            <param-name>clients</param-name>
+            <param-value>AnonymousClient</param-value>
+        </init-param>
+        <init-param>
+            <param-name>authorizers</param-name>
+            <param-value>mustBeAuth</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>mustBeAuthFilter</filter-name>
+        <url-pattern>/admin/logout.jsp</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+-->
+    <filter>
+        <filter-name>logoutFilter</filter-name>
+        <filter-class>org.pac4j.j2e.filter.LogoutFilter</filter-class>
+        <init-param>
+            <param-name>defaultUrl</param-name>
+            <param-value>/searchblox/admin/main.jsp</param-value>
+        </init-param>
+        <init-param>
+            <param-name>destroySession</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>logoutFilter</filter-name>
+        <url-pattern>/admin/logout.jsp</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>centralLogoutFilter</filter-name>
+        <filter-class>org.pac4j.j2e.filter.LogoutFilter</filter-class>
+        <init-param>
+            <param-name>defaultUrl</param-name>
+            <param-value>http://localhost:8080/?defaulturlafterlogoutafteridp</param-value>
+        </init-param>
+        <init-param>
+            <param-name>localLogout</param-name>
+            <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>centralLogout</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>logoutUrlPattern</param-name>
+            <param-value>http://localhost:8080/.*</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>centralLogoutFilter</filter-name>
+        <url-pattern>/centralLogout</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+    <!-- PAC4j SAML Implementation ends -->
+
+
+<!-- CORS filter enable code begins -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>com.thetransactioncompany.cors.CORSFilter</filter-class>
+        <!-- Note: All parameters are options, if omitted the CORS
+        Filter will fall back to the respective default values.
+        -->
+        <init-param>
+            <param-name>cors.allowGenericHttpRequests</param-name>
+            <param-value>true</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.allowOrigin</param-name>
+            <param-value>*</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.allowSubdomains</param-name>
+            <param-value>false</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.supportedMethods</param-name>
+            <param-value>GET, HEAD, POST, OPTIONS</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.supportedHeaders</param-name>
+            <param-value>*</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.exposedHeaders</param-name>
+            <param-value>X-Test-1, X-Test-2</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.supportsCredentials</param-name>
+            <param-value>true</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cors.maxAge</param-name>
+            <param-value>3600</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>Invocation context filter</filter-name>
+        <url-pattern>/servlet/AdServlet</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+  <!-- CORS filter enable code ends -->
+
+    <listener>
+        <listener-class>
+            com.searchblox.index.ContextListener
+        </listener-class>
+    </listener>
+<!--    Java Melody Start -->
+    <filter>
+        <filter-name>javamelody</filter-name>
+        <filter-class>net.bull.javamelody.MonitoringFilter</filter-class>
+        <async-supported>true</async-supported>
+        <init-param>
+            <param-name>authorized-users</param-name>
+            <param-value>admin:searchblox</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>javamelody</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>ASYNC</dispatcher>
+    </filter-mapping>
+    <listener>
+        <listener-class>net.bull.javamelody.SessionListener</listener-class>
+    </listener>
+    <!--    Java Melody End -->
+    <servlet>
+        <servlet-name>AutoSuggest</servlet-name>
+        <servlet-class>
+            com.searchblox.search.AutoSuggest
+        </servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>LicenseServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.LicenseServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>UserServlet</servlet-name>
+        <servlet-class>com.searchblox.admin.UserServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.searchblox.admin.LoginServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SecuredLoginServlet</servlet-name>
+        <servlet-class>com.searchblox.secured.SecuredLogin</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SecuredServlet</servlet-name>
+        <servlet-class>com.searchblox.secured.SecuredServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EmailDownload</servlet-name>
+        <servlet-class>com.searchblox.scanner.archive.ArchiveDownload</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>OKTALoginServlet</servlet-name>
+        <servlet-class>com.searchblox.okta.OKTALoginServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>TemplateServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.TemplateServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CollectionServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.CollectionServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>DatabaseServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.database.DatabaseServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SearchServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.search.SearchServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>IndexerServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.IndexerServlet
+        </servlet-class>
+    </servlet>
+
+
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.report.ReportServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CategoryServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.search.CategoryServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CustomServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.CustomServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>UploadServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.UploadServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>FileServlet</servlet-name>
+        <servlet-class>com.searchblox.search.FileServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EmailViewerServlet</servlet-name>
+        <servlet-class>com.searchblox.search.EmailViewer</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EmailServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.search.EmailServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CollectionListServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.collectionlist.CollectionListServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ReportListServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.reportlist.ReportListServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ReplicationServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.admin.ReplicationServlet
+        </servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>InternalAuthServlet</servlet-name>
+        <servlet-class>
+            com.searchblox.search.InternalAuthServlet
+        </servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>AdServlet</servlet-name>
+        <servlet-class>com.searchblox.ads.adverts.AdServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ClientServlet</servlet-name>
+        <servlet-class>com.searchblox.ads.client.ClientServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>DBServlet</servlet-name>
+        <servlet-class>com.searchblox.search.DBViewer</servlet-class>
+    </servlet>
+	<servlet>
+		<servlet-name>CollectionUploadServlet</servlet-name>
+		<servlet-class>
+			com.searchblox.admin.CollectionUploadServlet
+		</servlet-class>
+	</servlet>
+    <servlet>
+        <servlet-name>HighlighterServlet</servlet-name>
+        <servlet-class>com.searchblox.search.HighlighterServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>RestServlet</servlet-name>
+        <servlet-class>org.apache.wink.server.internal.servlet.RestServlet</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>com.searchblox.web.RestService</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>AutoSuggest</servlet-name>
+        <url-pattern>/servlet/AutoSuggest</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LicenseServlet</servlet-name>
+        <url-pattern>/servlet/LicenseServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>UserServlet</servlet-name>
+        <url-pattern>/servlet/UserServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/servlet/LoginServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SecuredLoginServlet</servlet-name>
+        <url-pattern>/servlet/SecuredLoginServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SecuredServlet</servlet-name>
+        <url-pattern>/servlet/SecuredServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EmailDownload</servlet-name>
+        <url-pattern>/servlet/EmailDownload</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>OKTALoginServlet</servlet-name>
+        <url-pattern>/servlet/OKTALoginServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>InternalAuthServlet</servlet-name>
+        <url-pattern>/servlet/InternalAuthServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>UploadServlet</servlet-name>
+        <url-pattern>/servlet/UploadServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DatabaseServlet</servlet-name>
+        <url-pattern>/servlet/DatabaseServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>TemplateServlet</servlet-name>
+        <url-pattern>/servlet/TemplateServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CollectionServlet</servlet-name>
+        <url-pattern>/servlet/CollectionServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SearchServlet</servlet-name>
+        <url-pattern>/servlet/SearchServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>IndexerServlet</servlet-name>
+        <url-pattern>/servlet/IndexerServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/servlet/ReportServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CategoryServlet</servlet-name>
+        <url-pattern>/servlet/CategoryServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CustomServlet</servlet-name>
+        <url-pattern>/api/rest/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>FileServlet</servlet-name>
+        <url-pattern>/servlet/FileServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EmailViewerServlet</servlet-name>
+        <url-pattern>/servlet/EmailViewer</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EmailServlet</servlet-name>
+        <url-pattern>/servlet/EmailServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>CollectionListServlet</servlet-name>
+        <url-pattern>/servlet/CollectionListServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ReportListServlet</servlet-name>
+        <url-pattern>/servlet/ReportListServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ReplicationServlet</servlet-name>
+        <url-pattern>/servlet/ReplicationServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AdServlet</servlet-name>
+        <url-pattern>/servlet/AdServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ClientServlet</servlet-name>
+        <url-pattern>/servlet/Client</url-pattern>
+    </servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>CollectionUploadServlet</servlet-name>
+		<url-pattern>/servlet/CollectionUploadServlet</url-pattern>
+	</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DBServlet</servlet-name>
+        <url-pattern>/servlet/DBServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>HighlighterServlet</servlet-name>
+        <url-pattern>/servlet/HighlighterServlet</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>RestServlet</servlet-name>
+        <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
+    <welcome-file-list>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/admin/errorpage.jsp</location>
+    </error-page>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Forbidden</web-resource-name>
+            <url-pattern>/config.xml</url-pattern>
+            <url-pattern>/license.xml</url-pattern>
+            <url-pattern>/index/*</url-pattern>
+            <url-pattern>/spellindex/*</url-pattern>
+            <url-pattern>/synonyms/*</url-pattern>
+            <url-pattern>/report/*</url-pattern>
+            <url-pattern>/ext/*</url-pattern>
+            <url-pattern>/publish/*</url-pattern>
+            <url-pattern>/stylesheets/*</url-pattern>
+            <url-pattern>/stopwords/*</url-pattern>
+            <url-pattern>/logs/*</url-pattern>
+            <url-pattern>/admin/content.jsp</url-pattern>
+            <url-pattern>/admin/menu1.jsp</url-pattern>
+            <url-pattern>/admin/menu2.jsp</url-pattern>
+            <url-pattern>/admin/header.jsp</url-pattern>
+
+            <!-- Patterns to prevent directory listing -->
+            <!-- Start -->
+            <url-pattern>/admin/adm/*</url-pattern>
+            <url-pattern>/admin/collection/*</url-pattern>
+            <url-pattern>/admin/reports/*</url-pattern>
+            <url-pattern>/admin/results/*</url-pattern>
+            <url-pattern>/admin/search/*</url-pattern>
+            <!-- End -->
+
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
+
+    <!--<login-config>-->
+        <!--<auth-method>FORM</auth-method>-->
+        <!--<realm-name>Test Realm</realm-name>-->
+        <!--<form-login-config>-->
+            <!--<form-login-page>/search.jsp</form-login-page>-->
+            <!--<form-error-page>/search.jsp</form-error-page>-->
+        <!--</form-login-config>-->
+    <!--</login-config>-->
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+
+        <!-- Uncomment this for secure HttpOnly cookies -->
+        <!--
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>true</secure>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+        -->
+    </session-config>
+
+</web-app>
